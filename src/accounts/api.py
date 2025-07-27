@@ -115,7 +115,7 @@ class GitHubAuthController:
             user.chat_id = tg_id
             await user.asave(update_fields=["chat_id"])
             
-            semaphore = asyncio.Semaphore(20)
+            semaphore = asyncio.Semaphore(50)
             async def process_repo(repo):
              async with semaphore:
                 repo_obj = await github_service.update_repository(user, repo)
