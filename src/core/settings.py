@@ -142,3 +142,21 @@ GITHUB_CLIENT_SECRET = config("GITHUB_CLIENT_SECRET")
 GITHUB_REDIRECT_URI = config("GITHUB_REDIRECT_URI")
 FERNET_KEY = config("FERNET_KEY")
 SERVER_URL = config("SERVER_URL")
+
+import logging
+import sys
+
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "handlers": {
+        "console": {
+            "class": "logging.StreamHandler",
+            "stream": sys.stdout,
+        },
+    },
+    "root": {
+        "handlers": ["console"],
+        "level": "INFO",
+    },
+}
