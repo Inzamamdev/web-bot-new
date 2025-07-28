@@ -123,9 +123,9 @@ class GitHubAuthController:
             logger.info(f"Updated user in {time.perf_counter() - t2:.2f}s")
             
             t3 = time.perf_counter()
-            created_count, updated_count = await github_service.update_repository(user, repos)
+            created_count = await github_service.update_repository(user, repos)
 
-            logger.info(f"Repositories synced: {created_count} created, {updated_count} updated")
+            logger.info(f"Repositories synced: {created_count} created")
 
             logger.info(f"Processed all {len(repos)} repos in {time.perf_counter() - t3:.2f}s")
 
