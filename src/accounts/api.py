@@ -108,14 +108,14 @@ class GitHubAuthController:
 
             start_time = time.perf_counter()
 
-            # Step 1: Get user + repos
+        # Step 1: Get user + repos
             t1 = time.perf_counter()
             user_data = github_service.get_user_data(access_token)
             repos_task = github_service.get_all_repos(access_token)
             user_data, repos = await asyncio.gather(user_data, repos_task)
             logger.info(f"Fetched user + repos in {time.perf_counter() - t1:.2f}s")
 
-            # Update user
+        # Update user
             t2 = time.perf_counter()
             user = await github_service.update_user_data(user_data, access_token)
             user.chat_id = tg_id
@@ -123,16 +123,10 @@ class GitHubAuthController:
             logger.info(f"Updated user in {time.perf_counter() - t2:.2f}s")
             
             t3 = time.perf_counter()
-           # Concurrency control for saving repos
-            save_semaphore = asyncio.Semaphore(20)
+            created_count, updated_count = await github_service.update_repository(user, repos)
 
-            async def save_repo(repo_data):
-                """Save only basic repo info (no branches/topics yet)."""
-                async with save_semaphore:
-                 return await github_service.update_repository(user, repo_data)
+            logger.info(f"Repositories synced: {created_count} created, {updated_count} updated")
 
-            # Step 3: Bulk save all repos concurrently
-            await asyncio.gather(*(save_repo(repo) for repo in repos))
             logger.info(f"Processed all {len(repos)} repos in {time.perf_counter() - t3:.2f}s")
 
         # Step 5: Total time

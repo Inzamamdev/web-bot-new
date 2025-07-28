@@ -106,21 +106,52 @@ class GitHubService:
 
     @sync_to_async
     @transaction.atomic
-    def update_repository(self, user: User, repo_data: dict) -> Repository:
+    def update_repository(self, user: User, repos: dict) -> Repository:
         """Create or update repository"""
-        repo, created = Repository.objects.update_or_create(
-            repo_id=repo_data["id"],
-            defaults={
-                "user": user,
-                "node_id": repo_data["node_id"],
-                "name": repo_data["name"],
-                "full_name": repo_data["full_name"],
-                "private": repo_data["private"],
-                "description": repo_data.get("description"),
-                # ... (keep all other repository fields from your original code)
-            },
+        """Bulk insert or update repositories with only basic info."""
+        repo_ids = [r["id"] for r in repos]
+
+    # Fetch existing repos for the user
+        existing_repos = {
+        r.repo_id: r for r in Repository.objects.filter(user=user, repo_id__in=repo_ids)
+         }
+
+        to_create = []
+        to_update = []
+
+        for repo in repos:
+         repo_id = repo["id"]
+         defaults = {
+            "user": user,
+            "node_id": repo["node_id"],
+            "name": repo["name"],
+            "full_name": repo["full_name"],
+            "private": repo["private"],
+            "description": repo.get("description"),
+            
+        }
+
+        if repo_id in existing_repos:
+            # Update existing instance fields
+            for field, value in defaults.items():
+                setattr(existing_repos[repo_id], field, value)
+            to_update.append(existing_repos[repo_id])
+        else:
+            to_create.append(Repository(repo_id=repo_id, **defaults))
+
+    # Bulk create new repos
+        if to_create:
+         Repository.objects.bulk_create(to_create, batch_size=100)
+
+    # Bulk update existing repos
+        if to_update:
+         Repository.objects.bulk_update(
+            to_update,
+            ["node_id", "name", "full_name", "private", "description", "updated_at"],
+            batch_size=100
         )
-        return repo
+
+        return len(to_create), len(to_update)
 
     async def update_branches(self, access_token: str, repository: Repository):
         """Update branches for a repository"""
