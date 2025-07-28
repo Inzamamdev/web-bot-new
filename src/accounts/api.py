@@ -122,34 +122,8 @@ class GitHubAuthController:
             await user.asave(update_fields=["chat_id"])
             logger.info(f"Updated user in {time.perf_counter() - t2:.2f}s")
             
-            semaphore = asyncio.Semaphore(50)
-            async def process_repo(repo):
-             repo_start = time.perf_counter()
-             async with semaphore:
-                repo_obj = await github_service.update_repository(user, repo)
-                # Run all repo updates concurrently
-                
-                subt_start = time.perf_counter()
-                await github_service.update_branches(access_token, repo_obj)
-                logger.info(f"Branches for {repo_obj.name} in {time.perf_counter() - subt_start:.2f}s")
-
-                subt_start = time.perf_counter()
-                await github_service._update_permissions(repo_obj, repo.get("permissions", {}))
-                logger.info(f"Permissions for {repo_obj.name} in {time.perf_counter() - subt_start:.2f}s")
-
-                subt_start = time.perf_counter()
-                await github_service._update_license(repo_obj, repo.get("license"))
-                logger.info(f"License for {repo_obj.name} in {time.perf_counter() - subt_start:.2f}s")
-
-                subt_start = time.perf_counter()
-                await github_service._update_topics(access_token, repo_obj, repo["name"])
-                logger.info(f"Topics for {repo_obj.name} in {time.perf_counter() - subt_start:.2f}s")
-
-                logger.info(f"Processed repo {repo_obj.name} in {time.perf_counter() - repo_start:.2f}s")
-
-
             t3 = time.perf_counter()
-            await asyncio.gather(*[process_repo(repo) for repo in repos])
+            await asyncio.gather(*[github_service.update_repository(user, repo) for repo in repos])
             logger.info(f"Processed all {len(repos)} repos in {time.perf_counter() - t3:.2f}s")
 
         # Step 5: Total time
