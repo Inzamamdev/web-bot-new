@@ -31,7 +31,7 @@ class Repository(models.Model):
     ]
     
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='repositories')
-    repo_id = models.BigIntegerField(unique=True)
+    repo_id = models.BigIntegerField()
     node_id = models.CharField(max_length=50)
     name = models.CharField(max_length=255)
     full_name = models.CharField(max_length=255)
@@ -70,9 +70,7 @@ class Repository(models.Model):
     pushed_at = models.DateTimeField(null=True, blank=True)
     
     class Meta:
-        constraints = [
-            models.UniqueConstraint(fields=["user", "repo_id"], name="unique_user_repo")
-        ]  # Prevents duplicates per user
+        unique_together = ('user', 'repo_id')  # Prevents duplicates per user
         verbose_name_plural = "Repositories"
         ordering = ['-pushed_at']
     
