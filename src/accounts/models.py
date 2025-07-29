@@ -70,7 +70,9 @@ class Repository(models.Model):
     pushed_at = models.DateTimeField(null=True, blank=True)
     
     class Meta:
-        unique_together = ("user", "repo_id")  # Prevents duplicates per user
+        constraints = [
+            models.UniqueConstraint(fields=["user", "repo_id"], name="unique_user_repo")
+        ]  # Prevents duplicates per user
         verbose_name_plural = "Repositories"
         ordering = ['-pushed_at']
     
