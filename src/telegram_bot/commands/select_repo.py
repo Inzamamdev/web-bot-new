@@ -17,7 +17,7 @@ async def select_repo_command(update: Update, context: ContextTypes.DEFAULT_TYPE
 
     # Fetch repos (top 10 to avoid huge keyboard)
     repos_qs = Repository.objects.filter(user=user).order_by('-updated_at')
-    repos = await sync_to_async(list)(repos_qs[:10])  # limit to 10 for now
+    repos = await sync_to_async(list)  # limit to 10 for now
 
     if not repos:
         await update.message.reply_text("No repositories found for your account.")
