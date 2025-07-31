@@ -1,12 +1,13 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser
+from encrypted_model_fields.fields import EncryptedCharField
 
-class User(AbstractUser):
+class User(AbstractUser,models.Model):
     github_id = models.BigIntegerField(unique=True, blank=True, null=True)
     chat_id = models.BigIntegerField(null=True, blank=True) 
     github_login = models.CharField(max_length=255)
     avatar = models.URLField(blank=True, null=True)
-    access_token = models.CharField(max_length=255)
+    access_token = EncryptedCharField(max_length=255)
     sso_token_expiry = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

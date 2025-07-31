@@ -18,11 +18,11 @@ class GitHubService:
         self.headers = {"Accept": "application/vnd.github.v3+json"}
         self.fernet = Fernet(settings.FERNET_KEY)
 
-    def encrypt_token(self, token: str) -> str:
-        return self.fernet.encrypt(token.encode()).decode()
+    # def encrypt_token(self, token: str) -> str:
+    #     return self.fernet.encrypt(token.encode()).decode()
 
-    def decrypt_token(self, encrypted_token: str) -> str:
-        return self.fernet.decrypt(encrypted_token.encode()).decode()
+    # def decrypt_token(self, encrypted_token: str) -> str:
+    #     return self.fernet.decrypt(encrypted_token.encode()).decode()
 
     async def _make_request(self, access_token: str, url: str, params: dict = None, headers: dict = None) -> dict:
         """Async helper method to make GitHub API requests"""
@@ -86,7 +86,7 @@ class GitHubService:
     @transaction.atomic
     def update_user_data(self, user_data: dict, access_token: str) -> User:
         """Create or update user from GitHub data"""
-        encrypted_token = self.encrypt_token(access_token)
+        
 
         user, created = User.objects.update_or_create(
             github_id=user_data["id"],
@@ -98,7 +98,7 @@ class GitHubService:
                 "public_repos": user_data.get("public_repos", 0),
                 "followers": user_data.get("followers", 0),
                 "following": user_data.get("following", 0),
-                "access_token": encrypted_token,
+                "access_token": access_token,
                 "sso_token_expiry": datetime.now() + timedelta(days=7),
             },
         )
