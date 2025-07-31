@@ -53,7 +53,7 @@ async def select_repo_callback(update: Update, context: ContextTypes.DEFAULT_TYP
     repo = await Repository.objects.filter(id=repo_id).afirst()
 
     logger.info("User object: %s", user)
-    logger.info("Repo object: %s", {model_to_dict(repo)})
+    logger.info("Repo object: %s", model_to_dict(repo))
 
     if not repo or not user:
         logger.error("Either user or repo not found. User: %s, Repo: %s", user, repo)
