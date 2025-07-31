@@ -110,6 +110,7 @@ class GitHubAuthController:
 
         # Step 1: Get user + repos
             t1 = time.perf_counter()
+            logger.info("Access token used: %s", access_token)
             user_data = github_service.get_user_data(access_token)
             repos_task = github_service.get_all_repos(access_token)
             user_data, repos = await asyncio.gather(user_data, repos_task)
