@@ -3,6 +3,7 @@ from telegram.ext import ContextTypes
 from accounts.models import User, Repository
 from asgiref.sync import sync_to_async
 from accounts.services.github_service import GitHubService
+from django.forms.models import model_to_dict
 import logging
 logger = logging.getLogger(__name__)
 github_service = GitHubService()
@@ -52,7 +53,7 @@ async def select_repo_callback(update: Update, context: ContextTypes.DEFAULT_TYP
     repo = await Repository.objects.filter(id=repo_id).afirst()
 
     logger.info("User object: %s", user)
-    logger.info("Repo object: %s", repo)
+    logger.info("Repo object: %s", {model_to_dict(repo)})
 
     if not repo or not user:
         logger.error("Either user or repo not found. User: %s, Repo: %s", user, repo)
