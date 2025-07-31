@@ -50,7 +50,7 @@ async def select_repo_callback(update: Update, context: ContextTypes.DEFAULT_TYP
 
     # Fetch user and repo
     user = await User.objects.filter(chat_id=query.from_user.id).afirst()
-    logger.info("Access token used: %s", user.access_token)
+    
 
     repo = await Repository.objects.filter(id=repo_id).afirst()
 
@@ -64,6 +64,7 @@ async def select_repo_callback(update: Update, context: ContextTypes.DEFAULT_TYP
 
     try:
         access_token = github_service.decrypt_token(user.access_token)
+        logger.info("Access token used: %s", access_token)
         branch_data = await github_service.update_branches(access_token, repo)
         logger.info("Branches fetched: %s", branch_data)
 
