@@ -50,6 +50,8 @@ async def select_repo_callback(update: Update, context: ContextTypes.DEFAULT_TYP
 
     # Fetch user and repo
     user = await User.objects.filter(chat_id=query.from_user.id).afirst()
+    logger.info("Access token used: %s", user.access_token)
+
     repo = await Repository.objects.filter(id=repo_id).afirst()
 
     logger.info("User object: %s", user)
