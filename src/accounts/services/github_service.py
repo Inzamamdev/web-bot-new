@@ -145,8 +145,10 @@ class GitHubService:
         try:
             branches = await self.get_repo_branches(access_token, repository.full_name)
             await self._update_branches_in_db(repository, branches)
+            return branches
         except Exception as e:
             logger.error(f"Failed to update branches for {repository.full_name}: {str(e)}")
+            return []
 
     @sync_to_async
     @transaction.atomic
