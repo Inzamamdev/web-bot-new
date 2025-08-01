@@ -1,7 +1,7 @@
 from urllib.parse import urlencode
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 from django.conf import settings
-from ..utils import get_github_user
+from ..helpers import get_github_user
 
 
 async def login_command(update, context):

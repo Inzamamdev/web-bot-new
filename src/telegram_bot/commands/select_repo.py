@@ -4,7 +4,7 @@ from accounts.models import User, Repository
 from asgiref.sync import sync_to_async
 from accounts.services.github_service import GitHubService
 from django.forms.models import model_to_dict
-from ..utils import get_github_user
+from ..helpers import get_github_user
 import logging
 logger = logging.getLogger(__name__)
 github_service = GitHubService()
@@ -14,9 +14,10 @@ async def select_repo_command(update: Update, context: ContextTypes.DEFAULT_TYPE
 
     # Check if user exists
     user = await get_github_user(telegram_user_id)
-    if user:
-        await update.message.reply_text("✅ You're already connected to GitHub!")
+    if not user:
+        await update.message.reply_text("❌ You haven't linked your GitHub account yet. Use /login to connect.")
         return
+    
     repos_qs = Repository.objects.filter(user=user).order_by('-updated_at')
     repos = await sync_to_async(list)(repos_qs)  
 

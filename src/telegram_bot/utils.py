@@ -27,9 +27,4 @@ async def notify_user(tg_id: int, message: str):
 
 
 
-async def get_github_user(telegram_user_id: int):
-    from accounts.models import User
-    user = await User.objects.filter(chat_id=telegram_user_id).afirst()
-    if user and user.access_token:
-        return user
-    return None
+
