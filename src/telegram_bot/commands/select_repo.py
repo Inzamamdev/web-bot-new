@@ -68,7 +68,7 @@ async def select_repo_callback(update: Update, context: ContextTypes.DEFAULT_TYP
         branch_data = await github_service.update_branches(user.access_token, repo)
         logger.info("Branches fetched: %s", branch_data)
         url = f"https://api.github.com/repos/{repo.full_name}"
-        repo_data = github_service._make_request(user.access_token,url,)
+        repo_data = await github_service._make_request(user.access_token,url,)
         permission = await github_service._update_permissions(repo, repo_data.get("permissions", {}))
         logger.info("Permissions fetched: %s", permission)
 
