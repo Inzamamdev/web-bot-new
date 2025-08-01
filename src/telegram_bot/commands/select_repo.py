@@ -85,7 +85,8 @@ async def select_repo_callback(update: Update, context: ContextTypes.DEFAULT_TYP
 
         await query.edit_message_text(
             f"*{repo.full_name}* selected!\n\n"
-            f"✅ Branches: `{', '.join([b['name'] for b in branch_data])}`\n",
+            f"✅ Branches: `{', '.join([b['name'] for b in branch_data])}`\n"
+            f"🔐 Permission: `{permission.get('permission', 'Unknown') if permission else 'Unknown'}`",
             parse_mode="Markdown"
         )
 
