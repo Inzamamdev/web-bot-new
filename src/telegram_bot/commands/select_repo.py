@@ -72,11 +72,11 @@ async def select_repo_callback(update: Update, context: ContextTypes.DEFAULT_TYP
         permission = await github_service._update_permissions(repo, repo_data.get("permissions", {}))
         logger.info("Permissions fetched: %s", permission)
 
-        # license_info = await github_service._update_license(repo, repo.get("license"))
-        # logger.info("License info fetched: %s", license_info)
+        license_info = await github_service._update_license(repo, repo_data.get("license"))
+        logger.info("License info fetched: %s", license_info)
 
-        # topics = await github_service._update_topics(user.access_token, repo, repo["name"])
-        # logger.info("Topics fetched: %s", topics)
+        topics = await github_service._update_topics(user.access_token, repo, repo["name"])
+        logger.info("Topics fetched: %s", topics)
 
         # Save selected repo to user
         user.selected_repo = repo
@@ -87,6 +87,8 @@ async def select_repo_callback(update: Update, context: ContextTypes.DEFAULT_TYP
             f"*{repo.full_name}* selected!\n\n"
             f"✅ Branches: `{', '.join([b['name'] for b in branch_data])}`\n"
             f"🔐 Permission: `{permission.get('permission', 'Unknown') if permission else 'Unknown'}`",
+            f"🏷 Topics: `{', '.join(topics) if topics else 'Unavailable'}`\n"
+            f"📄 License: `{license_info.get('name', 'None') if license_info else 'None'}`\n",
             parse_mode="Markdown"
         )
 
