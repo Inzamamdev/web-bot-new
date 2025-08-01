@@ -27,7 +27,7 @@ async def select_repo_command(update: Update, context: ContextTypes.DEFAULT_TYPE
 
     # Create inline keyboard
     keyboard = [
-        [InlineKeyboardButton(repo.name, callback_data=f"select_repo:{repo.id}")]
+        [InlineKeyboardButton(repo.full_name, callback_data=f"select_repo:{repo.id}")]
         for repo in repos
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
