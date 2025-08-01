@@ -1,0 +1,58 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.pyc
+*.pdb
+*.egg-info/
+*.egg
+*.log
+
+# Virtual environment
+venv/
+env/
+ENV/
+.venv/
+.ENV/
+
+# Django
+db.sqlite3
+*.sqlite3
+*.pot
+*.pyc
+*.mo
+*.log
+*.pid
+
+# Environment variables
+.env
+
+
+# VSCode or JetBrains IDEs
+.vscode/
+.idea/
+
+# Celery related
+celerybeat-schedule
+celerybeat.pid
+
+
+# Media and Static Files (generated)
+media/
+staticfiles/
+static/
+
+
+
+# Docker
+*.bak
+*.swp
+*.swo
+*.orig
+docker-compose.override.yml
+
+# System files
+.DS_Store
+Thumbs.db
+.vercel
