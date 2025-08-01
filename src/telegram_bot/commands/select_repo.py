@@ -69,14 +69,14 @@ async def select_repo_callback(update: Update, context: ContextTypes.DEFAULT_TYP
         logger.info("Branches fetched: %s", branch_data)
         url = f"https://api.github.com/repos/{repo.full_name}"
         repo_data = await github_service._make_request(user.access_token,url,)
-        logger.info("Repo Data object: %s", model_to_dict(repo_data))
+        logger.info("Repo Data object: %s", repo_data)
         permission = await github_service._update_permissions(repo, repo_data.get("permissions", {}))
         logger.info("Permissions fetched: %s", permission)
 
         license_info = await github_service._update_license(repo, repo_data.get("license"))
         logger.info("License info fetched: %s", license_info)
 
-        topics = await github_service._update_topics(user.access_token, repo, repo.name)
+        topics = await github_service._update_topics(user.access_token, repo, repo["name"])
         logger.info("Topics fetched: %s", topics)
 
         # Save selected repo to user
