@@ -16,13 +16,6 @@ logger = logging.getLogger(__name__)
 class GitHubService:
     def __init__(self):
         self.headers = {"Accept": "application/vnd.github.v3+json"}
-        # self.fernet = Fernet(settings.FERNET_KEY)
-
-    # def encrypt_token(self, token: str) -> str:
-    #     return self.fernet.encrypt(token.encode()).decode()
-
-    # def decrypt_token(self, encrypted_token: str) -> str:
-    #     return self.fernet.decrypt(encrypted_token.encode()).decode()
 
     async def _make_request(self, access_token: str, url: str, params: dict = None, headers: dict = None) -> dict:
         """Async helper method to make GitHub API requests"""
