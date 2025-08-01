@@ -1,5 +1,6 @@
 import logging
 from .services.bot import start_bot  # Updated import path
+from accounts.models import User
 
 logger = logging.getLogger(__name__)
 
@@ -21,3 +22,14 @@ async def notify_user(tg_id: int, message: str):
                 logger.info("Bot stopped and shut down")
             except Exception as e:
                 logger.error(f"Error shutting down bot: {e}")
+
+
+
+
+
+async def get_github_user(telegram_user_id: int):
+    
+    user = await User.objects.filter(chat_id=telegram_user_id).afirst()
+    if user and user.access_token:
+        return user
+    return None
