@@ -56,7 +56,7 @@ async def handle_telegram_webhook(request_body: bytes):
             await bot_app.bot.send_message(chat_id=tg_user.id, text="❌ Please log in using /login")
             return {"status": "unauthorized"}
         
-        context = bot_app.chat_data.get(update.effective_chat.id, {})
+        context = update
         logger.info(f"before dd_user: {context}")
         context["db_user"] = db_user
         context.chat_data[update.effective_chat.id] = context
