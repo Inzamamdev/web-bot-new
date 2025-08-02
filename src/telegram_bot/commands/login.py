@@ -12,7 +12,7 @@ async def login_command(update, context):
         await update.message.reply_text("✅ You're already connected to GitHub!")
         return
     
-    
+    context.user_data["db_user"]
     live_url = settings.SERVER_URL
     params = urlencode({"tg_id": telegram_user_id})
     login_url = f"{live_url}api/auth/github/login?{params}"

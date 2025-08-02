@@ -36,7 +36,7 @@ async def handle_telegram_webhook(request_body: bytes):
             update.callback_query and update.callback_query.from_user
         )
 
-        context = ContextTypes.DEFAULT_TYPE(bot=bot_app.bot, application=bot_app)
+        
         allowed_without_auth = ["/start", "/login"]
         command_text = (
             update.message.text if update.message else
@@ -60,10 +60,9 @@ async def handle_telegram_webhook(request_body: bytes):
             await bot_app.bot.send_message(chat_id=tg_user.id, text="❌ Please log in using /login")
             return {"status": "unauthorized"}
         
-        # Attach db_user to update for all commands
-        context.user_data["db_user"] = db_user
+       
 
-        await bot_app.process_update(update,context)
+        await bot_app.process_update(update)
         logger.info(f"Processed update ID: {update.update_id}")
         return {"status": "ok"}
     except Exception as e:
