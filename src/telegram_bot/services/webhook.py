@@ -58,7 +58,7 @@ async def handle_telegram_webhook(request_body: bytes):
         
         context = bot_app.chat_data.get(update.effective_chat.id, {})
         context["db_user"] = db_user
-        bot_app.chat_data[update.effective_chat.id] = context
+        context.chat_data[update.effective_chat.id] = context
 
         await bot_app.process_update(update)
         logger.info(f"Processed update ID: {update.update_id}")
