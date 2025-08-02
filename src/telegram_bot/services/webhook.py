@@ -60,7 +60,7 @@ async def handle_telegram_webhook(request_body: bytes):
         # Attach db_user to update for all commands
         context.user_data["db_user"] = db_user
 
-        await bot_app.process_update(update)
+        await bot_app.process_update(update,context)
         logger.info(f"Processed update ID: {update.update_id}")
         return {"status": "ok"}
     except Exception as e:
