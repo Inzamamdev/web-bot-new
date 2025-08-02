@@ -2,6 +2,7 @@ import json
 import logging
 import traceback
 from telegram import Update
+from telegram.ext import Application, CommandHandler, ContextTypes
 from .bot import start_bot
 from ..helpers import get_github_user
 
@@ -34,6 +35,8 @@ async def handle_telegram_webhook(request_body: bytes):
         tg_user = update.effective_user or (
             update.callback_query and update.callback_query.from_user
         )
+
+        context = ContextTypes.DEFAULT_TYPE(bot=bot_app.bot, application=bot_app)
         allowed_without_auth = ["/start", "/login"]
         command_text = (
             update.message.text if update.message else
