@@ -2,7 +2,8 @@ from urllib.parse import urlencode
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 from django.conf import settings
 from ..helpers import get_github_user
-
+import logging
+logger = logging.getLogger(__name__)
 
 async def login_command(update, context):
     telegram_user_id = update.effective_user.id
@@ -13,6 +14,7 @@ async def login_command(update, context):
         return
     
     context.user_data["db_user"] = user
+    logger.info(f"Processed update ID: {context}")
     live_url = settings.SERVER_URL
     params = urlencode({"tg_id": telegram_user_id})
     login_url = f"{live_url}api/auth/github/login?{params}"
