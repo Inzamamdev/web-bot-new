@@ -6,7 +6,7 @@ from accounts.models import Repository
 
 async def current_repo_command(update, context):
     telegram_user_id = update.effective_user.id
-    db_user = context.chat_data.get("db_user")
+    db_user = getattr(update, "_db_user", None)
       # Check if user has a selected repository
     if not db_user.selected_repo_id:
         await update.message.reply_text("You haven't selected a repository yet. Use /selectRepo to choose one.")
