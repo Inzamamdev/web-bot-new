@@ -3,6 +3,7 @@ import logging
 import traceback
 from telegram import Update
 from .bot import start_bot
+from ..helpers import get_github_user
 
 logger = logging.getLogger(__name__)
 
@@ -27,13 +28,37 @@ async def handle_telegram_webhook(request_body: bytes):
         if not update:
             logger.error(f"Invalid Telegram update: {data}")
             return {"status": "error", "error": "Invalid Telegram update"}
+        
+        # Allow certain commands without auth
+        tg_user = update.effective_user or (
+            update.callback_query and update.callback_query.from_user
+        )
+        allowed_without_auth = ["/start", "/login"]
+        if command_text:
+            # Strip bot name (/login@MyBot -> /login)
+            command_text = command_text.split("@")[0]
 
-        # Process update
+        if command_text in allowed_without_auth:
+            await bot_app.process_update(update)
+            logger.info(f"Processed update ID: {update.update_id}")
+            return {"status": "ok"}
+
+        # Authenticate user for all other commands
+        if not tg_user:
+            return {"status": "error", "error": "No Telegram user"}
+
+        db_user = await get_github_user(tg_user.id)
+        if not db_user:
+            await bot_app.bot.send_message(chat_id=tg_user.id, text="❌ Please log in using /login")
+            return {"status": "unauthorized"}
+        
+        context = bot_app.chat_data.get(update.effective_chat.id, {})
+        context["db_user"] = db_user
+        bot_app.chat_data[update.effective_chat.id] = context
+
         await bot_app.process_update(update)
         logger.info(f"Processed update ID: {update.update_id}")
-
         return {"status": "ok"}
-
     except Exception as e:
         logger.error(f"Error processing Telegram update: {e}")
         logger.error(f"Traceback: {traceback.format_exc()}")

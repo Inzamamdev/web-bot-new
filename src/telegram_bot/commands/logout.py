@@ -1,6 +1,6 @@
 from accounts.models import User
 import logging
-from ..helpers import get_github_user
+
 
 logger = logging.getLogger(__name__)
 async def logout_command(update, context):
@@ -8,13 +8,7 @@ async def logout_command(update, context):
      tg_id = str(update.effective_user.id)
      try:
         # Find the user associated with the Telegram ID
-        user = await get_github_user(tg_id)
-
-        if not user:
-            await update.message.reply_text("❌ No GitHub account linked to this Telegram ID. Please log in first.")
-            logger.warning(f"No user found for Telegram ID {tg_id}")
-            return
-
+        user = context.chat_data.get("db_user")
         # Clear access token and sso_token_expiry
         user.access_token = ""
         user.sso_token_expiry = None  # Clear to avoid naive datetime issues
