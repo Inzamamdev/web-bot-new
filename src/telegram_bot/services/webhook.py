@@ -26,7 +26,7 @@ async def handle_telegram_webhook(request_body: bytes):
 
         # Convert JSON to Telegram Update object
         update = Update.de_json(data, bot_app.bot)
-        context = bot_app.application_context
+       
         if not update:
             logger.error(f"Invalid Telegram update: {data}")
             return {"status": "error", "error": "Invalid Telegram update"}
