@@ -34,6 +34,10 @@ async def handle_telegram_webhook(request_body: bytes):
             update.callback_query and update.callback_query.from_user
         )
         allowed_without_auth = ["/start", "/login"]
+        command_text = (
+            update.message.text if update.message else
+            (update.callback_query.data if update.callback_query else None)
+        )
         if command_text:
             # Strip bot name (/login@MyBot -> /login)
             command_text = command_text.split("@")[0]
