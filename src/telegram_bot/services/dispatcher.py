@@ -3,7 +3,7 @@ from ..commands.start import start_command
 from ..commands.login import login_command
 from ..commands.logout import logout_command
 from ..commands.select_repo import select_repo_command, select_repo_callback
-from ..commands.current_repo import currentrepo_command
+from ..commands.current_repo import current_repo_command
 
 
 def register_commands(app):
@@ -12,4 +12,4 @@ def register_commands(app):
     app.add_handler(CommandHandler("logout", logout_command))
     app.add_handler(CommandHandler("selectRepo", select_repo_command))
     app.add_handler(CallbackQueryHandler(select_repo_callback, pattern="^select_repo:"))
-    app.add_handler(CommandHandler("currentRepo", currentrepo_command))
+    app.add_handler(CommandHandler("currentRepo", current_repo_command))
