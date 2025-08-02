@@ -25,6 +25,7 @@ async def handle_telegram_webhook(request_body: bytes):
 
         # Convert JSON to Telegram Update object
         update = Update.de_json(data, bot_app.bot)
+        context = bot_app.application_context
         if not update:
             logger.error(f"Invalid Telegram update: {data}")
             return {"status": "error", "error": "Invalid Telegram update"}
@@ -57,7 +58,7 @@ async def handle_telegram_webhook(request_body: bytes):
             return {"status": "unauthorized"}
         
         # Attach db_user to update for all commands
-        setattr(update, "_db_user", db_user)
+        context.user_data["db_user"] = db_user
 
         await bot_app.process_update(update)
         logger.info(f"Processed update ID: {update.update_id}")

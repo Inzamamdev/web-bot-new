@@ -8,7 +8,7 @@ async def logout_command(update, context):
      tg_id = str(update.effective_user.id)
      try:
         # Find the user associated with the Telegram ID
-        user = getattr(update, "_db_user", None)
+        user = context.user_data.get("db_user")
         # Clear access token and sso_token_expiry
         user.access_token = ""
         user.sso_token_expiry = None  # Clear to avoid naive datetime issues

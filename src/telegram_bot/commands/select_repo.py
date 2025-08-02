@@ -13,7 +13,7 @@ async def select_repo_command(update: Update, context: ContextTypes.DEFAULT_TYPE
     telegram_user_id = update.effective_user.id
 
     # Check if user exists
-    user = getattr(update, "_db_user", None)
+    user = context.user_data.get("db_user")
     if not user:
         await update.message.reply_text("❌ You haven't linked your GitHub account yet. Use /login to connect.")
         return
@@ -49,7 +49,7 @@ async def select_repo_callback(update: Update, context: ContextTypes.DEFAULT_TYP
     logger.info("Received repo selection for repo_id: %d", repo_id)
 
     # Fetch user and repo
-    user = getattr(update, "_db_user", None)
+    user = context.user_data.get("db_user")
     
 
     repo = await Repository.objects.filter(id=repo_id).afirst()
