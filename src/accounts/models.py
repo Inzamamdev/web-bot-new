@@ -19,6 +19,7 @@ class User(AbstractUser,models.Model):
         on_delete=models.SET_NULL,
         related_name="selected_by"
     )
+    current_branch = models.CharField(max_length=255, null=True, blank=True)
     followers = models.IntegerField(default=0)
     following = models.IntegerField(default=0)
     

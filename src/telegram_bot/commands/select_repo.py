@@ -84,15 +84,49 @@ async def select_repo_callback(update: Update, context: ContextTypes.DEFAULT_TYP
         await sync_to_async(user.save)()
         logger.info("Selected repo saved to user.")
 
-        await query.edit_message_text(
+        repo_summary = (
             f"*{repo.full_name}* selected!\n\n"
             f"✅ Branches: `{', '.join([b['name'] for b in branch_data])}`\n"
             f"🔐 Permission: `{permission.get('permission', 'Unknown') if permission else 'Unknown'}`\n"
             f"🏷 Topics: `{', '.join(topics) if topics else 'Unavailable'}`\n"
             f"📄 License: `{license_info.get('name', 'None') if license_info else 'None'}`\n",
-            parse_mode="Markdown"
+            
         )
+
+        # If branches exist, show branch selection keyboard
+        if branch_data:
+            keyboard = [
+                [InlineKeyboardButton(b["name"], callback_data=f"select_branch:{b['name']}")]
+                for b in branch_data
+            ]
+            reply_markup = InlineKeyboardMarkup(keyboard)
+            await query.edit_message_text(
+                f"{repo_summary}\n🌿 *Select a branch:*",
+                reply_markup=reply_markup,
+                parse_mode="Markdown"
+            )
+        else:
+            await query.edit_message_text(f"{repo_summary}\n_No branches found._", parse_mode="Markdown")
+
 
     except Exception as e:
         logger.exception("Error during repo selection: %s", str(e))
         await query.edit_message_text(f"Repo selected, but failed to fetch extra data: {str(e)}")
+
+
+async def select_branch_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    await query.answer()
+
+    branch_name = query.data.split(":")[1]
+    user = await User.objects.filter(chat_id=query.from_user.id).afirst()
+
+    if not user or not user.selected_repo:
+        await query.edit_message_text("❌ Please select a repository first using /selectRepo.")
+        return
+
+    # Save selected branch
+    user.current_branch = branch_name
+    await sync_to_async(user.save)()
+
+    await query.edit_message_text(f"🌿 Branch set to *{branch_name}*", parse_mode="Markdown")
