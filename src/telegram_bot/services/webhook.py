@@ -61,7 +61,7 @@ async def handle_telegram_webhook(request_body: bytes):
             return {"status": "unauthorized"}
         
        
-
+        bot_app.bot_data["db_user"] = db_user
         await bot_app.process_update(update)
         logger.info(f"Processed update ID: {update.update_id}")
         return {"status": "ok"}

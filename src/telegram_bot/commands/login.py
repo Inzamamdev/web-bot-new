@@ -11,8 +11,7 @@ async def login_command(update, context):
     user = await get_github_user(telegram_user_id)
 
     if user:
-        context.user_data["db_user"] = user
-        logger.info(f"context: {context.user_data.get("db_user")}")
+        logger.info(f"context: {context.bot_data.get("db_user")}")
         await update.message.reply_text("✅ You're already connected to GitHub!")
         return
     

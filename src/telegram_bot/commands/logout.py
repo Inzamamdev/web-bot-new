@@ -6,7 +6,7 @@ logger = logging.getLogger(__name__)
 async def logout_command(update, context):
      """Handle /logout command from Telegram"""
      tg_id = str(update.effective_user.id)
-     logger.info(f"context: {context.user_data.get("db_user")}")
+     logger.info(f"context: {context.bot_data.get("db_user")}")
      try:
         # Find the user associated with the Telegram ID
         user = context.user_data.get("db_user")
