@@ -121,10 +121,6 @@ async def select_branch_callback(update: Update, context: ContextTypes.DEFAULT_T
     branch_name = query.data.split(":")[1]
     user = await User.objects.filter(chat_id=query.from_user.id).afirst()
 
-    if not user or not user.selected_repo:
-        await query.edit_message_text("❌ Please select a repository first using /selectRepo.")
-        return
-
     # Save selected branch
     user.current_branch = branch_name
     await sync_to_async(user.save)()
