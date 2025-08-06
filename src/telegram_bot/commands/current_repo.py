@@ -2,11 +2,11 @@ from urllib.parse import urlencode
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 from django.conf import settings
 from accounts.models import Repository
-
+from ..helpers import get_github_user
 
 async def current_repo_command(update, context):
     telegram_user_id = update.effective_user.id
-    db_user = context.user_data.get("db_user")
+    db_user = get_github_user(telegram_user_id)
       # Check if user has a selected repository
     if not db_user.selected_repo_id:
         await update.message.reply_text("You haven't selected a repository yet. Use /selectRepo to choose one.")
