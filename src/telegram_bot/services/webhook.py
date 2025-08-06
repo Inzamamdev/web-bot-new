@@ -30,38 +30,8 @@ async def handle_telegram_webhook(request_body: bytes):
         if not update:
             logger.error(f"Invalid Telegram update: {data}")
             return {"status": "error", "error": "Invalid Telegram update"}
-        
-        # Allow certain commands without auth
-        tg_user = update.effective_user or (
-            update.callback_query and update.callback_query.from_user
-        )
-
-        
-        allowed_without_auth = ["/start", "/login"]
-        command_text = (
-            update.message.text if update.message else
-            (update.callback_query.data if update.callback_query else None)
-        )
-        if command_text:
-            # Strip bot name (/login@MyBot -> /login)
-            command_text = command_text.split("@")[0]
-
-        if command_text in allowed_without_auth:
-            await bot_app.process_update(update)
-            logger.info(f"Processed update ID: {update.update_id}")
-            return {"status": "ok"}
-
-        # Authenticate user for all other commands
-        if not tg_user:
-            return {"status": "error", "error": "No Telegram user"}
-
-        db_user = await get_github_user(tg_user.id)
-        if not db_user:
-            await bot_app.bot.send_message(chat_id=tg_user.id, text="❌ Please log in using /login")
-            return {"status": "unauthorized"}
-        
        
-        bot_app.bot_data["db_user"] = db_user
+
         await bot_app.process_update(update)
         logger.info(f"Processed update ID: {update.update_id}")
         return {"status": "ok"}
