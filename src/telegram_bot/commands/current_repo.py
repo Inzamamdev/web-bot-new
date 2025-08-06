@@ -22,5 +22,7 @@ async def current_repo_command(update, context):
     message = (
         f"*Current Repository:*\n"
         f"📦 {repo.full_name}\n"
+        f"Current Branch\n"
+        f"{db_user.current_branch}\n"
     )
     await update.message.reply_text(message, parse_mode="Markdown")
