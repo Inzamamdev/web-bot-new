@@ -6,7 +6,7 @@ from ..helpers import get_github_user
 
 async def current_repo_command(update, context):
     telegram_user_id = update.effective_user.id
-    db_user = get_github_user(telegram_user_id)
+    db_user = await get_github_user(telegram_user_id)
       # Check if user has a selected repository
     if not db_user.selected_repo_id:
         await update.message.reply_text("You haven't selected a repository yet. Use /selectRepo to choose one.")

@@ -13,7 +13,7 @@ async def select_repo_command(update: Update, context: ContextTypes.DEFAULT_TYPE
     telegram_user_id = update.effective_user.id
 
     # Check if user exists
-    user = get_github_user(telegram_user_id)
+    user = await get_github_user(telegram_user_id)
     if not user:
         await update.message.reply_text("❌ You haven't linked your GitHub account yet. Use /login to connect.")
         return
