@@ -40,6 +40,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'encrypted_model_fields',
+    'encrypted_model_fields',
     "ninja_extra",
     "ninja_jwt",
     'accounts',
@@ -141,6 +142,7 @@ TELEGRAM_BOT_TOKEN = config("BOT_TOKEN")
 GITHUB_CLIENT_ID = config("GITHUB_CLIENT_ID")
 GITHUB_CLIENT_SECRET = config("GITHUB_CLIENT_SECRET")
 GITHUB_REDIRECT_URI = config("GITHUB_REDIRECT_URI")
+FIELD_ENCRYPTION_KEY = config("FERNET_KEY")
 FIELD_ENCRYPTION_KEY = config("FERNET_KEY")
 SERVER_URL = config("SERVER_URL")
 

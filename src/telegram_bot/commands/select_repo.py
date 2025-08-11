@@ -1,6 +1,7 @@
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import ContextTypes
 from accounts.models import User, Repository
+from accounts.services.github_service import GitHubService
 from asgiref.sync import sync_to_async
 from accounts.services.github_service import GitHubService
 from ..helpers import get_github_user
