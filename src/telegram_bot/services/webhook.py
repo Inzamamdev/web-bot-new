@@ -33,6 +33,7 @@ async def handle_telegram_webhook(request_body: bytes):
        
 
         await bot_app.process_update(update)
+        Application.bot.set_my_commands([('start', 'Starts the bot')])
         logger.info(f"Processed update ID: {update.update_id}")
         return {"status": "ok"}
     except Exception as e:
