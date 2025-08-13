@@ -40,7 +40,6 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'encrypted_model_fields',
-    'encrypted_model_fields',
     "ninja_extra",
     "ninja_jwt",
     'accounts',
