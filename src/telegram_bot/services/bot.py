@@ -21,7 +21,7 @@ async def build_bot():
 async def start_bot():
     """Initialize and start the bot for processing updates."""
     try:
-        app = build_bot()
+        app = await build_bot()
         await app.initialize()
         await app.start()
         logger.info("Bot started")
