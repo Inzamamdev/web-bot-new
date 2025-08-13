@@ -10,7 +10,10 @@ def build_bot():
         token = settings.TELEGRAM_BOT_TOKEN
         if not token:
             raise ValueError("TELEGRAM_BOT_TOKEN is not set")
+            
+        Application.bot.set_my_commands([('start', 'Starts the bot')])
         app = Application.builder().token(token).build()
+        register_commands(app)
         logger.info("Bot initialized successfully")
         return app
     except Exception as e:
@@ -21,7 +24,6 @@ async def start_bot():
     """Initialize and start the bot for processing updates."""
     try:
         app = build_bot()
-        await register_commands(app)
         await app.initialize()
         await app.start()
         logger.info("Bot started")
