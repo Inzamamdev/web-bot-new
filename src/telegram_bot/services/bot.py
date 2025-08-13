@@ -5,13 +5,13 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-def build_bot():
+async def build_bot():
     try:
         token = settings.TELEGRAM_BOT_TOKEN
         if not token:
             raise ValueError("TELEGRAM_BOT_TOKEN is not set")
         app = Application.builder().token(token).build()
-        register_commands(app)
+        await register_commands(app)
         logger.info("Bot initialized successfully")
         return app
     except Exception as e:
