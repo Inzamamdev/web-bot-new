@@ -138,7 +138,15 @@ class GitHubService:
 
     @sync_to_async
     @transaction.atomic
-    def _update_branches_in_db(self, repository: Repository, branches: List[dict]):
+    async def _update_branches_in_db(self, repository: Repository, branches: List[dict]):
+
+        """Async method to update branches in database using bulk operations and return refreshed objects"""
+
+        existing_branches_query = repository.branches.all()
+        existing_branches = {
+            branch.name: branch async for branch in existing_branches_query
+        }
+        current_branch_names = {branch["name"] for branch in branches}
         """Sync method to update branches in database"""
         # Delete old branches not present anymore
         to_delete = [
