@@ -3,10 +3,6 @@ from datetime import datetime, timedelta
 from typing import List, Optional
 
 import httpx
-from asgiref.sync import sync_to_async
-from cryptography.fernet import Fernet
-from django.conf import settings
-from django.db import transaction
 
 from ..models import *
 
@@ -17,7 +13,9 @@ class GitHubService:
     def __init__(self):
         self.headers = {"Accept": "application/vnd.github.v3+json"}
 
-    async def _make_request(self, access_token: str, url: str, params: dict = None, headers: dict = None) -> dict:
+    async def _make_request(
+        self, access_token: str, url: str, params: dict = None, headers: dict = None
+    ) -> dict:
         """Async helper method to make GitHub API requests"""
         if headers is None:
             headers = {**self.headers, "Authorization": f"Bearer {access_token}"}
@@ -44,7 +42,7 @@ class GitHubService:
                 batch = await self._make_request(
                     access_token,
                     "https://api.github.com/user/repos",
-                    params={"page": page, "per_page": per_page, "sort": "updated"}
+                    params={"page": page, "per_page": per_page, "sort": "updated"},
                 )
                 if not batch:
                     break
@@ -63,8 +61,7 @@ class GitHubService:
     async def get_repo_branches(self, access_token: str, full_name: str) -> List[dict]:
         """Fetch branches for a repository"""
         return await self._make_request(
-            access_token,
-            f"https://api.github.com/repos/{full_name}/branches"
+            access_token, f"https://api.github.com/repos/{full_name}/branches"
         )
 
     async def get_repo_topics(self, access_token: str, full_name: str) -> dict:
@@ -72,12 +69,10 @@ class GitHubService:
         return await self._make_request(
             access_token,
             f"https://api.github.com/repos/{full_name}/topics",
-            headers={"Accept": "application/vnd.github.mercy-preview+json"}
+            headers={"Accept": "application/vnd.github.mercy-preview+json"},
         )
 
-    @sync_to_async
-    @transaction.atomic
-    def update_user_data(self, user_data: dict, access_token: str) -> User:
+    async def update_user_data(self, user_data: dict, access_token: str) -> User:
         """Create or update user from GitHub data"""
         
 
@@ -97,48 +92,46 @@ class GitHubService:
         )
         return user
 
-    @sync_to_async
-    @transaction.atomic
-    def update_repository(self, user: User, repos: dict) -> Repository:
-        """Bulk insert repositories with only basic info (skip updates)."""
+    async def update_repository(self, user: User, repos: dict) -> List[Repository]:
+        """Version that returns created repositories"""
         if not repos:
             return 0
 
         repo_ids = [r["id"] for r in repos]
-
-    # Get existing repo IDs for this user so we don't duplicate
         existing_ids = set(
-        Repository.objects.filter(user=user, repo_id__in=repo_ids)
-        .values_list("repo_id", flat=True)
+            [
+                r.repo_id
+                async for r in Repository.objects.filter(
+                    user=user, repo_id__in=repo_ids
+                )
+            ]
         )
 
-        to_create = []
-        for repo in repos:
-            if repo["id"] not in existing_ids:
-                to_create.append(
-                Repository(
-                    repo_id=repo["id"],
-                    user=user,
-                    node_id=repo["node_id"],
-                    name=repo["name"],
-                    full_name=repo["full_name"],
-                    private=repo["private"],
-                    description=repo.get("description"),
-                )
+        to_create = [
+            Repository(
+                repo_id=repo["id"],
+                user=user,
+                node_id=repo["node_id"],
+                name=repo["name"],
+                full_name=repo["full_name"],
+                private=repo["private"],
+                description=repo.get("description"),
             )
+            for repo in repos
+            if repo["id"] not in existing_ids
+        ]
 
-     # Bulk create only new repos
         if to_create:
-            Repository.objects.bulk_create(to_create, batch_size=100)
-
-        return len(to_create)
+            created = await Repository.objects.abulk_create(to_create, batch_size=100)
+            return created
+        return []
 
     async def update_branches(self, access_token: str, repository: Repository):
         """Update branches for a repository"""
         try:
             branches = await self.get_repo_branches(access_token, repository.full_name)
-            await self._update_branches_in_db(repository, branches)
-            return branches
+            db_branches = await self._update_branches_in_db(repository, branches)
+            return db_branches
         except Exception as e:
             logger.error(f"Failed to update branches for {repository.full_name}: {str(e)}")
             return []
@@ -148,58 +141,126 @@ class GitHubService:
     def _update_branches_in_db(self, repository: Repository, branches: List[dict]):
         """Sync method to update branches in database"""
         # Delete old branches not present anymore
-        existing_branches = set(repository.branches.values_list("name", flat=True))
-        current_branches = {branch["name"] for branch in branches}
-        repository.branches.filter(
-            name__in=existing_branches - current_branches
-        ).delete()
+        to_delete = [
+            name for name in existing_branches if name not in current_branch_names
+        ]
+        if to_delete:
+            await repository.branches.filter(name__in=to_delete).adelete()
 
-        # Create or update branches
+        # Prepare batches for bulk operations
+        to_create = []
+        to_update = []
+
         for branch in branches:
+            branch_name = branch["name"]
             commit = branch.get("commit", {})
-            Branch.objects.update_or_create(
-                repository=repository,
-                name=branch["name"],
-                defaults={
-                    "protected": branch.get("protected", False),
-                    "last_commit_sha": commit.get("sha", ""),
-                    "last_commit_url": commit.get("url", ""),
-                },
+            defaults = {
+                "protected": branch.get("protected", False),
+                "last_commit_sha": commit.get("sha", ""),
+                "last_commit_url": commit.get("url", ""),
+            }
+
+            if branch_name in existing_branches:
+                # Update existing branch
+                db_branch = existing_branches[branch_name]
+                for field, value in defaults.items():
+                    setattr(db_branch, field, value)
+                to_update.append(db_branch)
+            else:
+                # Create new branch
+                to_create.append(
+                    Branch(repository=repository, name=branch_name, **defaults)
+                )
+
+        # Perform bulk operations
+        if to_create:
+            await Branch.objects.abulk_create(to_create)
+
+        if to_update:
+            await Branch.objects.abulk_update(
+                to_update, fields=["protected", "last_commit_sha", "last_commit_url"]
             )
 
-    @sync_to_async
-    @transaction.atomic
-    def _update_permissions(self, repository: Repository, permissions: dict):
-        """Update repository permissions"""
-        if permissions:
-            RepositoryPermission.objects.update_or_create(
+        # Refresh all branches from DB to get complete updated instances
+        refreshed_branches = [
+            branch
+            async for branch in repository.branches.filter(
+                name__in=current_branch_names
+            )
+        ]
+
+        return refreshed_branches
+
+    async def _update_permissions(self, repository: Repository, permissions: dict):
+        """Update repository permissions using bulk operations"""
+        if not permissions:
+            return
+
+        # Fetch existing permissions in bulk (usually just 1 record)
+        existing_perms = [
+            perm
+            async for perm in RepositoryPermission.objects.filter(repository=repository)
+        ]
+
+        if existing_perms:
+            # Bulk update existing records
+            for perm in existing_perms:
+                perm.admin = permissions.get("admin", False)
+                perm.maintain = permissions.get("maintain", False)
+                perm.push = permissions.get("push", False)
+                perm.triage = permissions.get("triage", False)
+                perm.pull = permissions.get("pull", True)
+
+            await RepositoryPermission.objects.abulk_update(
+                existing_perms, fields=["admin", "maintain", "push", "triage", "pull"]
+            )
+        else:
+            # Bulk create new record (even if just one)
+            new_perms = RepositoryPermission(
                 repository=repository,
-                defaults={
-                    "admin": permissions.get("admin", False),
-                    "maintain": permissions.get("maintain", False),
-                    "push": permissions.get("push", False),
-                    "triage": permissions.get("triage", False),
-                    "pull": permissions.get("pull", True),
-                },
+                admin=permissions.get("admin", False),
+                maintain=permissions.get("maintain", False),
+                push=permissions.get("push", False),
+                triage=permissions.get("triage", False),
+                pull=permissions.get("pull", True),
+            )
+            await RepositoryPermission.objects.abulk_create([new_perms])
+
+    async def _update_license(
+        self, repository: Repository, license_data: Optional[dict]
+    ):
+        """Alternative with bulk operations (less optimal for this case)"""
+        if not license_data:
+            return
+
+        defaults = {
+            "key": license_data.get("key", ""),
+            "name": license_data.get("name", ""),
+            "spdx_id": license_data.get("spdx_id", ""),
+            "url": license_data.get("url"),
+            "node_id": license_data.get("node_id", ""),
+        }
+
+        existing_licenses = [
+            license_obj
+            async for license_obj in License.objects.filter(repository=repository)
+        ]
+
+        if existing_licenses:
+            for license_obj in existing_licenses:
+                for field, value in defaults.items():
+                    setattr(license_obj, field, value)
+            await License.objects.abulk_update(
+                existing_licenses, fields=["key", "name", "spdx_id", "url", "node_id"]
+            )
+        else:
+            await License.objects.abulk_create(
+                [License(repository=repository, **defaults)]
             )
 
-    @sync_to_async
-    @transaction.atomic
-    def _update_license(self, repository: Repository, license_data: Optional[dict]):
-        """Update repository license"""
-        if license_data:
-            License.objects.update_or_create(
-                repository=repository,
-                defaults={
-                    "key": license_data.get("key", ""),
-                    "name": license_data.get("name", ""),
-                    "spdx_id": license_data.get("spdx_id", ""),
-                    "url": license_data.get("url"),
-                    "node_id": license_data.get("node_id", ""),
-                },
-            )
-
-    async def _update_topics(self, access_token: str, repository: Repository, repo_name: str):
+    async def _update_topics(
+        self, access_token: str, repository: Repository, repo_name: str
+    ):
         """Update repository topics"""
         try:
             topics_response = await self._make_request(
@@ -212,14 +273,39 @@ class GitHubService:
         except Exception as e:
             logger.error(f"Failed to update topics for {repo_name}: {str(e)}")
 
-    @sync_to_async
-    @transaction.atomic
-    def _update_topics_in_db(self, repository: Repository, topics: List[str]):
-        """Sync method to update topics in database"""
-        # Clear existing topics
-        repository.topics.clear()
+    async def _update_topics_in_db(self, repository: Repository, topics: List[str]):
+        """Async method to update topics in database using bulk operations"""
+        if not topics:
+            await repository.topics.aclear()
+            return
 
-        # Add new topics
-        for topic_name in topics:
-            topic, _ = Topic.objects.get_or_create(name=topic_name)
-            repository.topics.add(topic)
+        # Clear existing topics
+        await repository.topics.aclear()
+
+        # Get existing topics in bulk
+        existing_topics = {
+            topic.name: topic async for topic in Topic.objects.filter(name__in=topics)
+        }
+
+        # Identify topics that need to be created
+        topics_to_create = [name for name in topics if name not in existing_topics]
+
+        # Bulk create missing topics
+        if topics_to_create:
+            new_topics = await Topic.objects.abulk_create(
+                [Topic(name=name) for name in topics_to_create]
+            )
+            existing_topics.update({topic.name: topic for topic in new_topics})
+
+        # Bulk add all topics to repository
+        topic_objects = [existing_topics[name] for name in topics]
+        await repository.topics.aadd(*topic_objects)
+
+    async def fetch_codebase(self, repository, owner, branch, access_token):
+        try:
+            return await self._make_request(
+                access_token,
+                f"https://api.github.com/repos/{owner}/{repository}/git/trees/{branch}",
+            )
+        except Exception as e:
+            logger.error(f"Failed to fetch codebase for {repository}: {str(e)}")

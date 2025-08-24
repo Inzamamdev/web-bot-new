@@ -9,13 +9,13 @@ from django.conf import settings
 from django.shortcuts import redirect
 from django.http import HttpResponse
 from ninja_extra import api_controller, route
-from ninja_jwt.authentication import AsyncJWTAuth
 
 from .models import OAuthState, Repository, Branch
 from .schemas import *
 from .services.github_service import GitHubService
 from telegram_bot.utils import notify_user
 from telegram import Bot
+
 bot = Bot(token=settings.TELEGRAM_BOT_TOKEN)
 
 logger = logging.getLogger(__name__)
@@ -31,16 +31,18 @@ class GitHubAuthController:
         """Initiate GitHub OAuth flow"""
         if not settings.GITHUB_CLIENT_ID or not settings.GITHUB_REDIRECT_URI:
             return 400, {"detail": "GitHub OAuth not configured", "code": 400}
-        
+
         tg_id = request.GET.get("tg_id")  # ✅ Extract Telegram user ID
         if not tg_id:
-         return 400, {"detail": "Missing tg_id in query params", "code": 400}
+            return 400, {"detail": "Missing tg_id in query params", "code": 400}
 
         scope = "repo,user"
         state = secrets.token_urlsafe(32)
 
         await OAuthState.objects.acreate(
-            state=state, telegram_id=tg_id, expires_at=datetime.now() + timedelta(minutes=10)
+            state=state,
+            telegram_id=tg_id,
+            expires_at=datetime.now() + timedelta(minutes=10),
         )
 
         auth_url = (
@@ -75,13 +77,12 @@ class GitHubAuthController:
             code = request.GET.get("code")
             if not code:
                 return 400, {"detail": "Authorization code missing", "code": 400}
-            
-             # Get stored state with Telegram ID
+
+            # Get stored state with Telegram ID
             state_obj = await OAuthState.objects.aget(state=state)
             tg_id = state_obj.telegram_id
 
-
-             # Clean up
+            # Clean up
             await OAuthState.objects.filter(state=state).adelete()
 
             # Exchange code for access token
@@ -133,13 +134,12 @@ class GitHubAuthController:
         # Step 5: Total time
             logger.info(f"TOTAL callback time: {time.perf_counter() - start_time:.2f}s")
             await notify_user(tg_id, "✅ Your repositories have been synced!")
-                
+
             return HttpResponse(
-    "<h2>✅ GitHub login successful!</h2>"
-    "<p>You can return to Telegram now. Your repositories have been synced.</p>"
-)
-        
-        
+                "<h2>✅ GitHub login successful!</h2>"
+                "<p>You can return to Telegram now. Your repositories have been synced.</p>"
+            )
+
         except Exception as e:
             logger.error(f"OAuth error: {str(e)}", exc_info=True)
             return 500, {"detail": "Authentication failed", "code": 500}
@@ -147,72 +147,45 @@ class GitHubAuthController:
     @route.get("/repositories/{user_id}", response=List[RepositorySchema])
     async def list_repositories(self, request, user_id):
         """List all repositories for the authenticated user"""
-        repos = []
-        async for repo in Repository.objects.filter(user_id=user_id).prefetch_related(
-            "branches"
-        ):
-            branches = []
-            async for branch in repo.branches.all():
-                branches.append(
-                    {
-                        "name": branch.name,
-                        "protected": branch.protected,
-                        "last_commit_sha": branch.last_commit_sha,
-                        "last_commit_url": branch.last_commit_url,
-                    }
-                )
-
-            repos.append(
-                {
-                    "id": repo.repo_id,
-                    "name": repo.name,
-                    "full_name": repo.full_name,
-                    "private": repo.private,
-                    "description": repo.description,
-                    "html_url": repo.html_url,
-                    "language": repo.language,
-                    "stargazers_count": repo.stargazers_count,
-                    "forks_count": repo.forks_count,
-                    "open_issues_count": repo.open_issues_count,
-                    "branches": branches,
-                }
-            )
+        repos = [
+            RepositorySchema.model_validate(repo)
+            async for repo in Repository.objects.filter(
+                user_id=user_id
+            ).prefetch_related("branches")
+        ]
 
         return repos
 
     @route.get(
         "/repositories/{int:repo_id}/branches",
-        response=List[BranchSchema],
-        auth=AsyncJWTAuth(),
+        response={404: dict, 200: List[BranchSchema]},
     )
-    async def get_repo_branches(self, request, repo_id: int):
+    async def get_repo_branches(self, request, repo_id: int, user_id: int):
         """Get branches for a specific repository"""
-        repo = await Repository.objects.aget(repo_id=repo_id, user=request.user)
-        branches = []
-        async for branch in repo.branches.all():
-            branches.append(
-                {
-                    "name": branch.name,
-                    "protected": branch.protected,
-                    "last_commit_sha": branch.last_commit_sha,
-                    "last_commit_url": branch.last_commit_url,
-                }
-            )
-        return branches
+        repo = (
+            await Repository.objects.prefetch_related("branches")
+            .filter(id=repo_id, user=user_id)
+            .afirst()
+        )
+        if not repo:
+            return 404, {"detail": "Repository not found", "code": 404}
+        branches = [BranchSchema.model_validate(b) async for b in repo.branches.all()]
+        print(len(branches))
+        return 200, branches
 
     @route.get(
         "/repositories/{int:repo_id}/branches/{str:branch_name}",
-        response=BranchSchema,
-        auth=AsyncJWTAuth(),
+        response={404: dict, 200: BranchSchema},
     )
-    async def get_branch(self, request, repo_id: int, branch_name: str):
+    async def get_branch(self, request, repo_id: int, branch_name: str, user_id: int):
         """Get details for a specific branch"""
-        branch = await Branch.objects.aget(
-            repository__repo_id=repo_id, repository__user=request.user, name=branch_name
+        branch = (
+            await Branch.objects.select_related("repository", "repository__user")
+            .filter(
+                repository__id=repo_id, repository__user_id=user_id, name=branch_name
+            )
+            .afirst()
         )
-        return {
-            "name": branch.name,
-            "protected": branch.protected,
-            "last_commit_sha": branch.last_commit_sha,
-            "last_commit_url": branch.last_commit_url,
-        }
+        if not branch:
+            return 404, {"detail": "Branch not found", "code": 404}
+        return 200, BranchSchema.model_validate(branch)

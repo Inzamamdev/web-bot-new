@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Error</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            background-color: #f8f9fa;
+            color: #333;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            text-align: center;
+        }
+        .container {
+            padding: 40px;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            color: #dc3545;
+            margin-top: 0;
+        }
+        p {
+            font-size: 1.1em;
+            color: #6c757d;
+        }
+        pre {
+            background-color: #e9ecef;
+            padding: 15px;
+            border-radius: 4px;
+            text-align: left;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            font-size: 0.9em;
+            color: #495057;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>An Error Occurred</h1>
+        {% if error %}
+            <p>We're sorry, but something went wrong.</p>
+            <p>Here are the details of the error:</p>
+            <pre>{{ error }}</pre>
+        {% else %}
+            <p>An unexpected error occurred. Please try again later.</p>
+        {% endif %}
+    </div>
+</body>
+</html>

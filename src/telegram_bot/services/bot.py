@@ -1,9 +1,10 @@
 from telegram.ext import Application, CommandHandler
-from .dispatcher import register_commands
+from .dispatcher import register_commands, set_commands
 from django.conf import settings
 import logging
 
 logger = logging.getLogger(__name__)
+
 
 def build_bot():
     try:
@@ -18,11 +19,13 @@ def build_bot():
         logger.error(f"Failed to initialize bot: {e}")
         raise
 
+
 async def start_bot():
     """Initialize and start the bot for processing updates."""
     try:
         app = build_bot()
         await app.initialize()
+        await set_commands(app)
         await app.start()
         logger.info("Bot started")
         return app

@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>File Browser</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f9fafb;
+            margin: 0;
+            padding: 0;
+            color: #333;
+        }
+
+        header {
+            background: #2563eb;
+            color: white;
+            padding: 1rem 2rem;
+            font-size: 1.5rem;
+        }
+
+        main {
+            padding: 2rem;
+            max-width: 900px;
+            margin: auto;
+        }
+
+        .path {
+            margin-bottom: 1rem;
+            padding: 0.5rem 1rem;
+            background: #eef2ff;
+            border: 1px solid #c7d2fe;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            color: #374151;
+        }
+
+        ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        li {
+            margin: 0.3rem 0;
+        }
+
+        a {
+            display: inline-block;
+            text-decoration: none;
+            color: #2563eb;
+            background: #e0f2fe;
+            padding: 0.4rem 0.7rem;
+            border-radius: 6px;
+            transition: all 0.2s ease-in-out;
+            font-weight: 500;
+        }
+
+        a:hover {
+            background: #2563eb;
+            color: white;
+        }
+
+        footer {
+            margin-top: 2rem;
+            padding: 1rem;
+            font-size: 0.9rem;
+            color: #6b7280;
+            text-align: center;
+        }
+
+        i {
+            color: #6b7280;
+        }
+    </style>
+</head>
+
+<body>
+    <header>
+        📁 Project File Browser
+    </header>
+
+    <main>
+        {% if path %}
+        <div class="path">Current path: {{ path }}</div>
+        {% endif %}
+
+        <ul>
+            {% for f in files %}
+            <li>
+                {% if path %}
+                {% with new_path=path|add:'/'|add:f %}
+                <a href="{% url 'preview:preview_serve' repo_id=repo_id path=new_path %}">{{ f }}</a>
+                {% endwith %}
+                {% else %}
+                <a href="{% url 'preview:preview_serve' repo_id=repo_id path=f %}">{{ f }}</a>
+                {% endif %}
+            </li>
+            {% endfor %}
+        </ul>
+
+        <footer>
+            <i>If your project has an <b>index.html</b>, it will auto-load.<br>
+                Otherwise, choose a file above.</i>
+        </footer>
+    </main>
+</body>
+
+</html>

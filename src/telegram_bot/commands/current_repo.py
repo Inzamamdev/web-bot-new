@@ -18,11 +18,11 @@ async def current_repo_command(update, context):
         await update.message.reply_text("The selected repository was not found. Please select again using /selectRepo.")
         return
 
-    # Send repo details
+    # Send repo details - using HTML parsing to avoid Markdown issues
     message = (
-        f"*Current Repository:*\n"
+        f"<b>Current Repository:</b>\n"
         f"📦 {repo.full_name}\n"
-        f"Current Branch\n"
-        f"{db_user.current_branch}\n"
+        f"<b>Current Branch:</b>\n"
+        f"🌿 {db_user.current_branch}\n"
     )
-    await update.message.reply_text(message, parse_mode="Markdown")
+    await update.message.reply_text(message, parse_mode="HTML")
